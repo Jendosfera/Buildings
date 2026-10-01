@@ -30,7 +30,7 @@ jobs:
     ls -la "$ANDROID_HOME"/licenses 2>/dev/null || echo "licenses folder not found"
     "$ANDROID_HOME"/cmdline-tools/latest/bin/sdkmanager --version 2>&1 || \
     "$ANDROID_HOME"/cmdline-tools/bin/sdkmanager --version 2>&1 || \
-    echo "sdkmanager not found in expected places"
+    echo "sdkmanager not found in expected places"   
            # Принятие лицензий Android SDK — ВАЖНО
       - name: Accept Android SDK licenses
         run: |
