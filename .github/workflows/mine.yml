@@ -23,6 +23,14 @@ jobs:
             libncurses5-dev libncursesw5-dev zlib1g-dev openjdk-11-jdk unzip git
           pip install --upgrade pip
           pip install cython buildozer
+          
+      - name: Check sdkmanager and licenses
+  run: |
+    echo "ANDROID_HOME=$ANDROID_HOME"
+    ls -la "$ANDROID_HOME"/licenses 2>/dev/null || echo "licenses folder not found"
+    "$ANDROID_HOME"/cmdline-tools/latest/bin/sdkmanager --version 2>&1 || \
+    "$ANDROID_HOME"/cmdline-tools/bin/sdkmanager --version 2>&1 || \
+    echo "sdkmanager not found in expected places"
            # Принятие лицензий Android SDK — ВАЖНО
       - name: Accept Android SDK licenses
         run: |
