@@ -1,0 +1,18 @@
+# Виртуальные окружения
+venv/
+env/
+kivy-env/
+.venv/
+
+# Кэш Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
