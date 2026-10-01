@@ -23,6 +23,10 @@ jobs:
             libncurses5-dev libncursesw5-dev zlib1g-dev openjdk-11-jdk unzip git
           pip install --upgrade pip
           pip install cython buildozer
+           # Принятие лицензий Android SDK — ВАЖНО
+      - name: Accept Android SDK licenses
+        run: |
+          yes | sdkmanager --licenses || true
 
       - name: Build APK
         run: |
