@@ -1,48 +1,43 @@
-name: Build Android APK
+name: Build APK
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [main]
 
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.8'
+          python-version: '3.11'
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
 
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y python3-pip autoconf automake build-essential libssl-dev libffi-dev \
-            libncurses5-dev libncursesw5-dev zlib1g-dev openjdk-11-jdk unzip git
-          pip install --upgrade pip
-          pip install cython buildozer
-          
-      - name: Check sdkmanager and licenses
-  run: |
-    echo "ANDROID_HOME=$ANDROID_HOME"
-    ls -la "$ANDROID_HOME"/licenses 2>/dev/null || echo "licenses folder not found"
-    "$ANDROID_HOME"/cmdline-tools/latest/bin/sdkmanager --version 2>&1 || \
-    "$ANDROID_HOME"/cmdline-tools/bin/sdkmanager --version 2>&1 || \
-    echo "sdkmanager not found in expected places"   
-           # Принятие лицензий Android SDK — ВАЖНО
+          sudo apt-get install -y autoconf automake cmake build-essential libssl-dev libffi-dev python3-venv
+          pip install buildozer Cython==0.29.36
+
       - name: Accept Android SDK licenses
         run: |
-          yes | sdkmanager --licenses || true
+          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
 
       - name: Build APK
         run: |
-          # Buildozer требует, чтобы spec-файл был в корне
-          buildozer -v android debug
+          echo y | buildozer -v android debug
 
-      - name: Upload APK
+      - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: apk-file
+          name: kotlovan-apk
           path: bin/*.apk
