@@ -25,21 +25,21 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y autoconf automake cmake build-essential libssl-dev libffi-dev python3-venv
+          sudo apt-get install -y autoconf automake libtool cmake build-essential libssl-dev libffi-dev
           pip install buildozer Cython==0.29.36
 
       - name: Accept Android SDK licenses
         run: |
           yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
-      - name: Patch configure.ac for LT_SYS_SYMBOL_USCORE
+
+      - name: Fix LT_SYS_SYMBOL_USCORE macro for libffi
         run: |
-          find .buildozer/android/platform/build-arm64-v8a_armeabi-v7a/ -name configure.ac -print0 | \
-          while IFS= read -r -d '' cfg; do
-            if ! grep -q "LT_SYS_SYMBOL_USCORE" "$cfg"; then
-              sed -i '1i m4_pattern_allow([LT_SYS_SYMBOL_USCORE])' "$cfg"
-              echo "Patched $cfg"
-            fi
-          done
+          echo 'AC_DEFUN([LT_SYS_SYMBOL_USCORE], [lt_cv_sys_symbol_underscore=no])' | \
+            sudo tee /usr/share/aclocal/lt_sys_symbol_uscore.m4
+          sudo aclocal --force
+
+      - name: Clean previous build
+        run: rm -rf .buildozer bin
 
       - name: Build APK
         run: |
