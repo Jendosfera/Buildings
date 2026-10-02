@@ -31,6 +31,15 @@ jobs:
       - name: Accept Android SDK licenses
         run: |
           yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
+      - name: Patch configure.ac for LT_SYS_SYMBOL_USCORE
+        run: |
+          find .buildozer/android/platform/build-arm64-v8a_armeabi-v7a/ -name configure.ac -print0 | \
+          while IFS= read -r -d '' cfg; do
+            if ! grep -q "LT_SYS_SYMBOL_USCORE" "$cfg"; then
+              sed -i '1i m4_pattern_allow([LT_SYS_SYMBOL_USCORE])' "$cfg"
+              echo "Patched $cfg"
+            fi
+          done
 
       - name: Build APK
         run: |
