@@ -36,7 +36,6 @@ jobs:
         run: |
           echo 'AC_DEFUN([LT_SYS_SYMBOL_USCORE], [lt_cv_sys_symbol_underscore=no])' | \
             sudo tee /usr/share/aclocal/lt_sys_symbol_uscore.m4
-          sudo aclocal --force
 
       - name: Clean previous build
         run: rm -rf .buildozer bin
