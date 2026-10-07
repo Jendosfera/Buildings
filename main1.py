@@ -646,8 +646,26 @@ class GridViewScreen(Screen):
         #исправление on_size привязывает к изменению размера экрана
         self.bind(size=self.on_size)
         self.build_ui()
-    
     def build_ui(self):
+        layout = BoxLayout(orientation='vertical', padding=10, spacing=10)
+
+        # Верхняя панель: назад + название + сохранить
+        top_bar = BoxLayout(size_hint_y=None, height=60, spacing=10)
+
+        self.back_btn = IconButton(icon_type='back', size_hint=(None, None), size=(50, 50))
+        self.back_btn.bind(on_press=lambda *a: setattr(self.manager, 'current', 'main_menu'))
+        top_bar.add_widget(self.back_btn)
+
+        title = Label(text='Сетка массива', font_size=20, size_hint_x=1)
+        top_bar.add_widget(title)
+
+        # Кнопка сохранения (дискета)
+        self.save_btn = IconButton(icon_type='save', size_hint=(None, None), size=(50, 50))
+        self.save_btn.bind(on_press=self.on_save_array)
+        top_bar.add_widget(self.save_btn)
+
+        layout.add_widget(top_bar)
+
         self.clear_widgets()
         self.layout = FloatLayout()
         
@@ -672,6 +690,7 @@ class GridViewScreen(Screen):
         self.layout.add_widget(self.scroll)
         
         self.add_widget(self.layout)
+        return layout
     
     def on_size(self, *args):
         if self.layout:
