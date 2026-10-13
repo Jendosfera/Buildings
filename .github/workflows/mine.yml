@@ -15,7 +15,15 @@ jobs:
       - name: Force clean Buildozer & dist
         run: |
           rm -rf .buildozer ~/.buildozer bin dist
-
+ 
+      
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+          cache: 'gradle'
+ 
       - name: Set up Java 11
         uses: actions/setup-java@v3
         with:
