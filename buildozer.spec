@@ -43,3 +43,8 @@ buildozer.warn_on_root = 1
 [buildozer]
 log_level = 2
 warn_on_root = 1
+
+p4a.source_dir = /home/runner/work/Buildings/Buildings/.buildozer/android/platform/python-for-android
+# Важно: запрещаем обновление pip внутри сборки
+p4a.extra_args = "--no-update-pip"
+
