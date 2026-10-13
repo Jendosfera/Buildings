@@ -1,68 +1,77 @@
-name: Build APK
+name: Build Android APK (Kotlovan CI)
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:  # Позволяет запустить сборку вручную кнопкой в GitHub Actions
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 90
+    
     steps:
-      - uses: actions/checkout@v4
+      # 1. Кэширование Android SDK и NDK (чтобы не качать по 20 минут каждый раз)
+      - name: Cache Android SDK and NDK
+        uses: actions/cache@v3
+        with:
+          path: |
+            /home/runner/.buildozer/android/platform/android-ndk-r*
+            /home/runner/.buildozer/android/platform/android-sdk
+          key: android-cache-${{ runner.os }}-${{ hashFiles('**/buildozer.spec') }}
+          restore-keys: |
+            android-cache-${{ runner.os }}-
 
+      # 2. Получение кода из репозитория
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      # 3. Установка Python (версия 3.11 - самая стабильная для Kivy/P4A)
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.8'
-          
-      - name: Clean Buildozer cache
-        run: |
-          rm -rf ~/.buildozer
-          rm -rf .buildozer
-          rm -rf build
-          
-      - name: Clean dist/bin folders
-        run: |  
-          rm -rf bin
-          rm -rf dist
+          python-version: '3.11'
 
-      - name: Set up Java
-        uses: actions/setup-java@v4
+      # 4. Установка JDK 17 (обязательно для сборки Android)
+      - name: Set up JDK (Java 17)
+        uses: actions/setup-java@v5
         with:
-          java-version: '17'
           distribution: 'temurin'
+          java-version: '17'
 
-      - name: Install dependencies
+      # 5. Проверка установки Java (для отладки в логах)
+      - name: Verify Java installation
         run: |
-          sudo apt-get update
-          sudo apt-get install -y autoconf automake libtool cmake build-essential libssl-dev libffi-dev
-          pip install buildozer Cython==0.29.36
+          which javac
+          javac -version
+          echo "JAVA_HOME=$JAVA_HOME"
 
-      - name: Accept Android SDK licenses
-        run: |
-          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
+      # 6. Установка зависимостей Buildozer
+      - name: Install Buildozer and dependencies
+        run: pip install buildozer cython
 
-      - name: Fix LT_SYS_SYMBOL_USCORE macro for libffi
-        run: |
-          echo 'AC_DEFUN([LT_SYS_SYMBOL_USCORE], [lt_cv_sys_symbol_underscore=no])' | \
-            sudo tee /usr/share/aclocal/lt_sys_symbol_uscore.m4
-
-      - name: Clean previous build
-        run: rm -rf .buildozer bin
-
-      - name: Build APK
-        run: |
-          echo y | buildozer -v android debug
-
-      - name: Build Android application
-        run: buildozer -v android debug
+      # 7. Принятие лицензий Android SDK и установка инструментов
+      # Это решает ошибку: "Лицензии не приняты" и "Aidl не найден"
+      - name: Accept Android SDK licenses & Install Tools
         env:
-          JAVA_HOME: /opt/hostedtoolcache/Java_Temurin-Hotspot_jdk/11.0.20-1/x64
+          ANDROID_SDK_ROOT: /home/runner/.buildozer/android/platform/android-sdk
+        run: |
+          # Создаем директорию, если вдруг её нет
+          mkdir -p "$ANDROID_SDK_ROOT"
+          
+          # Устанавливаем конкретные стабильные версии (избегаем проблем с версией 37.0.0)
+          sdkmanager --install "build-tools;33.0.2" "platform-tools" "platforms;android-33"
+          
+          # Автоматически отвечаем "да" на все лицензионные соглашения
+          yes | sdkmanager --licenses
 
-
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: kotlovan-apk
-          path: bin/*.apk
+      # 8. Финальная сборка APK
+      - name: Build APK with Buildozer
+        env:
+          # Важно: явно указываем путь к SDK для Buildozer, чтобы он не искал сам и не ошибся
+          ANDROID_SDK_ROOT: /home/runner/.buildozer/android/platform/android-sdk
+          ANDROID_NDK_ROOT: /home/runner/.buildozer/android/platform/android-ndk-r28b
+        run: python -m buildozer -v android debug
