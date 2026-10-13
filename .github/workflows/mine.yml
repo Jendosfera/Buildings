@@ -1,3 +1,14 @@
+name: Build Android APK (Kotlovan)
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:  # позволяет запускать сборку вручную кнопкой в Actions
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -15,17 +26,15 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: '17'
-          # cache: 'gradle' — можно оставить, можно убрать
 
-      # (опционально) проверка, что Java видна
       - name: Verify Java installation
         run: |
           which javac
           javac -version
+          echo "JAVA_HOME=$JAVA_HOME"
 
       - name: Install Buildozer and dependencies
         run: pip install buildozer cython
 
       - name: Build APK
         run: python -m buildozer -v android debug
-        # Важно: buildozer ищет buildozer.spec в корне репозитория
