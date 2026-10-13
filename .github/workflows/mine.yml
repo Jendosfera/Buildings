@@ -35,7 +35,41 @@ jobs:
         with:
           python-version: '3.11'
 
-      # 4. JDK 17 (обязательно для Android)
+             # 4. Подготовка Android SDK (cmdline-tools + лицензии)
+      - name: Prepare Android SDK and accept licenses
+        run: |
+          # Создаём структуру папок
+          mkdir -p "$ANDROID_HOME"
+          mkdir -p "$ANDROID_HOME/cmdline-tools"
+
+          # Скачиваем cmdline-tools (минимальная версия, где есть sdkmanager)
+          CMDLINE_TOOLS_URL="https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip"
+          curl -Lo cmdline-tools.zip "$CMDLINE_TOOLS_URL"
+          unzip -q cmdline-tools.zip -d "$ANDROID_HOME/cmdline-tools"
+
+          # Google кладёт содержимое в папку "cmdline-tools/cmdline-tools".
+          # Для sdkmanager важно, чтобы путь был $ANDROID_HOME/cmdline-tools/latest
+          mv "$ANDROID_HOME/cmdline-tools/cmdline-tools" "$ANDROID_HOME/cmdline-tools/latest"
+
+          # Добавляем sdkmanager в PATH
+          echo "$ANDROID_HOME/cmdline-tools/latest/bin" >> $GITHUB_PATH
+
+          # Проверяем, что sdkmanager виден
+          sdkmanager --version
+
+          # Принимаем все лицензии (это обязательно, иначе сборка упадёт на лицензиях)
+          yes | sdkmanager --licenses > /dev/null || true
+        env:
+          ANDROID_HOME: /home/runner/.buildozer/android/platform/android-sdk
+
+      # 5. Установка компонентов SDK (нужные Buildozer пакеты)
+      - name: Install Android SDK components
+        run: |
+          sdkmanager "platform-tools" "platforms;android-33" "build-tools;33.0.0" > /dev/null
+        env:
+          ANDROID_HOME: /home/runner/.buildozer/android/platform/android-sdk
+
+       # 4. JDK 17 (обязательно для Android)
       - name: Set up JDK (Java 17)
         uses: actions/setup-java@v5
         with:
