@@ -2,12 +2,12 @@ name: Build Android APK (Kotlovan)
 
 on:
   push:
-    branches:
-      - main
+    ###branches:
+    ###  - main
   pull_request:
-    branches:
-      - main
-  workflow_dispatch:  # позволяет запускать сборку вручную кнопкой в Actions
+    ###branches:
+    ###  - main
+  workflow_dispatch:  # позволяет запускатручную кнопкой в Actionsь сборку в
 
 jobs:
   build:
