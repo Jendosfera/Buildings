@@ -1,8 +1,8 @@
-name: Build APK
+name: Android Build
 
 on:
   push:
-    branches: [main]
+    branches: [ "main" ]
 
 jobs:
   build:
@@ -11,58 +11,26 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Python
+      # Очистка — критически важна, чтобы не подхватить битый кэш
+      - name: Force clean Buildozer & dist
+        run: |
+          rm -rf .buildozer ~/.buildozer bin dist
+
+      - name: Set up Java 11
+        uses: actions/setup-java@v3
+        with:
+          java-version: '11'
+          distribution: 'temurin'
+
+      - name: Set up Python 3.8
         uses: actions/setup-python@v5
         with:
           python-version: '3.8'
-          
-      - name: Clean Buildozer cache
-        run: |
-          rm -rf ~/.buildozer
-          rm -rf .buildozer
-          rm -rf build
-          
-      - name: Clean dist/bin folders
-        run: |  
-          rm -rf bin
-          rm -rf dist
-
-      - name: Set up Java
-        uses: actions/setup-java@v4
-        with:
-          java-version: '17'
-          distribution: 'temurin'
 
       - name: Install dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y autoconf automake libtool cmake build-essential libssl-dev libffi-dev
-          pip install buildozer Cython==0.29.36
-
-      - name: Accept Android SDK licenses
-        run: |
-          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
-
-      - name: Fix LT_SYS_SYMBOL_USCORE macro for libffi
-        run: |
-          echo 'AC_DEFUN([LT_SYS_SYMBOL_USCORE], [lt_cv_sys_symbol_underscore=no])' | \
-            sudo tee /usr/share/aclocal/lt_sys_symbol_uscore.m4
-
-      - name: Clean previous build
-        run: rm -rf .buildozer bin
-
-      - name: Build APK
-        run: |
-          echo y | buildozer -v android debug
+        run: pip install buildozer cython
 
       - name: Build Android application
         run: buildozer -v android debug
         env:
           JAVA_HOME: /opt/hostedtoolcache/Java_Temurin-Hotspot_jdk/11.0.20-1/x64
-
-
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: kotlovan-apk
-          path: bin/*.apk
