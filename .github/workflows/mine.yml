@@ -7,14 +7,14 @@ on:
   pull_request:
     branches:
       - main
-  workflow_dispatch:  # Позволяет запустить сборку вручную кнопкой в GitHub Actions
+  workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    
+
     steps:
-      # 1. Кэширование Android SDK и NDK (чтобы не качать по 20 минут каждый раз)
+      # 1. Кэширование SDK/NDK (экономит 15–20 минут на каждом следующем запуске)
       - name: Cache Android SDK and NDK
         uses: actions/cache@v3
         with:
@@ -25,53 +25,39 @@ jobs:
           restore-keys: |
             android-cache-${{ runner.os }}-
 
-      # 2. Получение кода из репозитория
+      # 2. Checkout
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      # 3. Установка Python (версия 3.11 - самая стабильная для Kivy/P4A)
+      # 3. Python
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
 
-      # 4. Установка JDK 17 (обязательно для сборки Android)
+      # 4. JDK 17 (обязательно для Android)
       - name: Set up JDK (Java 17)
         uses: actions/setup-java@v5
         with:
           distribution: 'temurin'
           java-version: '17'
 
-      # 5. Проверка установки Java (для отладки в логах)
-      - name: Verify Java installation
+      - name: Verify Java
         run: |
           which javac
           javac -version
-          echo "JAVA_HOME=$JAVA_HOME"
 
-      # 6. Установка зависимостей Buildozer
+      # 5. Установка Buildozer и зависимостей
       - name: Install Buildozer and dependencies
         run: pip install buildozer cython
 
-      # 7. Принятие лицензий Android SDK и установка инструментов
-      # Это решает ошибку: "Лицензии не приняты" и "Aidl не найден"
-      - name: Accept Android SDK licenses & Install Tools
+      # 6. Установка cmdline-tools и принятие лицензий (это исправляет ошибку sdkmanager not found)
+      - name: Setup Android SDK cmdline-tools and accept licenses
         env:
-          ANDROID_SDK_ROOT: /home/runner/.buildozer/android/platform/android-sdk
+          ANDROID_HOME: /home/runner/.buildozer/android/platform/android-sdk
         run: |
-          # Создаем директорию, если вдруг её нет
-          mkdir -p "$ANDROID_SDK_ROOT"
-          
-          # Устанавливаем конкретные стабильные версии (избегаем проблем с версией 37.0.0)
-          sdkmanager --install "build-tools;33.0.2" "platform-tools" "platforms;android-33"
-          
-          # Автоматически отвечаем "да" на все лицензионные соглашения
-          yes | sdkmanager --licenses
+          # Создаём папку SDK
+          mkdir -p "$ANDROID_HOME"
 
-      # 8. Финальная сборка APK
-      - name: Build APK with Buildozer
-        env:
-          # Важно: явно указываем путь к SDK для Buildozer, чтобы он не искал сам и не ошибся
-          ANDROID_SDK_ROOT: /home/runner/.buildozer/android/platform/android-sdk
-          ANDROID_NDK_ROOT: /home/runner/.buildozer/android/platform/android-ndk-r28b
-        run: python -m buildozer -v android debug
+          # Скачиваем cmdline-tools (минимальная версия, нужная sdkmanager)
+          CMDLINE_TOOLS_URL="https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip"
